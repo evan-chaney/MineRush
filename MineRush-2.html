@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>MineRush</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:#0a0500;font-family:'Courier New',monospace;touch-action:none;user-select:none;}
+#wrap{
+  display:flex;flex-direction:column;align-items:center;
+  height:100%;max-width:480px;margin:0 auto;position:relative;
+}
+#hud{
+  width:100%;background:#080400;border-bottom:2px solid #3a2200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:5px 10px;flex-shrink:0;gap:4px;
+}
+.hi{font-size:11px;font-weight:bold;color:#ffd700;white-space:nowrap;}
+#ht{color:#ff7733;}
+canvas{display:block;width:100%;flex:1;min-height:0;}
+#ctrl{
+  width:100%;background:#080400;border-top:2px solid #3a2200;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 14px 12px;flex-shrink:0;
+}
+.dp{
+  display:grid;
+  grid-template-columns:42px 42px 42px;
+  grid-template-rows:42px 42px 42px;
+  gap:3px;
+}
+.cb{
+  background:#120900;border:2px solid #442800;border-radius:8px;
+  color:#bb8800;font-size:17px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;touch-action:none;font-family:inherit;
+}
+.cb.on,.cb:active{background:#442800;border-color:#ffd700;color:#ffd700;}
+.rp{display:flex;flex-direction:column;align-items:center;gap:5px;}
+#ibar{display:flex;gap:3px;min-height:36px;}
+.is{
+  width:36px;height:36px;background:#100800;border:2px solid #331800;
+  border-radius:5px;display:flex;align-items:center;justify-content:center;
+  font-size:15px;position:relative;cursor:pointer;
+}
+.is.sel{border-color:#ffd700;}
+.ic{position:absolute;bottom:1px;right:2px;font-size:8px;color:#fff;background:rgba(0,0,0,.7);padding:0 2px;border-radius:2px;}
+.ar{display:flex;gap:7px;}
+.ab{
+  width:58px;height:58px;background:#100800;border:2px solid #441800;
+  border-radius:50%;color:#ffd700;font-size:10px;font-weight:bold;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;touch-action:none;font-family:inherit;gap:1px;
+}
+.ab.on,.ab:active{background:#3a1800;border-color:#ffd700;}
+#am{border-color:#550099;}
+#am.on,#am:active{background:#280044;border-color:#cc88ff;}
+
+/* OVERLAY */
+#ov{
+  position:absolute;inset:0;background:rgba(0,0,0,.92);
+  display:flex;align-items:center;justify-content:center;z-index:50;
+}
+#ov.h{display:none;}
+.sc{display:none;flex-direction:column;align-items:center;
+  padding:16px 20px;width:100%;max-height:100%;overflow-y:auto;}
+.sc.a{display:flex;}
+.sc h1{font-size:32px;color:#ffd700;text-shadow:0 0 18px #996600;margin-bottom:4px;text-align:center;}
+.sc h2{font-size:16px;color:#cc9900;margin-bottom:10px;text-align:center;}
+.sc p{font-size:12px;color:#888;margin-bottom:3px;text-align:center;}
+.mb{
+  background:#120900;border:2px solid #ffd700;color:#ffd700;
+  padding:10px 22px;font-size:14px;font-weight:bold;font-family:inherit;
+  border-radius:8px;cursor:pointer;margin:3px;min-width:170px;text-align:center;
+}
+.mb:active,.mb:hover{background:#331800;}
+.lc{
+  background:#0d0600;border:1.5px solid #2a1500;border-radius:8px;
+  padding:8px 12px;margin:2px 0;cursor:pointer;width:100%;
+}
+.lc:active,.lc:hover{border-color:#ffd700;}
+.lt{font-size:13px;color:#ffd700;font-weight:bold;}
+.ld{font-size:11px;color:#777;margin-top:2px;}
+.bg{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:bold;margin-left:4px;}
+.bt{background:#3a0000;color:#ff6666;}
+.bn{background:#003300;color:#66ff66;}
+.bl{background:#222000;color:#ffbb00;}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hud">
+    <span class="hi" id="hl">Level 1</span>
+    <span class="hi" id="hp">⛏ 0 ore left</span>
+    <span class="hi" id="hpk" style="color:#8B5E3C">⛏ Wooden</span>
+    <button class="mb" id="hpause" onclick="togglePause()" style="padding:3px 10px;font-size:12px;min-width:0;margin:0">⏸</button>
+  </div>
+  <canvas id="c"></canvas>
+  <div id="ctrl">
+    <div class="dp">
+      <div></div><div class="cb" id="bu">▲</div><div></div>
+      <div class="cb" id="bl2">◀</div><div></div><div class="cb" id="br">▶</div>
+      <div></div><div class="cb" id="bd">▼</div><div></div>
+    </div>
+    <div class="rp">
+      <div id="ibar"></div>
+      <div class="ar">
+        <div class="ab" id="au"><span style="font-size:19px">💥</span>USE</div>
+        <div class="ab" id="am"><span style="font-size:19px">⛏</span>MINE</div>
+      </div>
+    </div>
+  </div>
+  <div id="ov">
+    <div class="sc a" id="sm">
+      <h1>⛏ MINERUSH</h1>
+      <p style="color:#aa8833;font-size:13px;margin-bottom:12px">Dig deep · Collect ore · Survive the depths</p>
+      <button class="mb" onclick="gotoScr('sl')">▶ Play</button>
+      <button class="mb" onclick="gotoScr('sh')">? How to Play</button>
+    </div>
+    <div class="sc" id="sl">
+      <h2>Choose Level</h2>
+      <div id="ll" style="width:100%"></div>
+      <button class="mb" onclick="gotoScr('sm')" style="margin-top:8px">← Back</button>
+    </div>
+    <div class="sc" id="sh">
+      <h2>How to Play</h2>
+      <p>⛏ Hold <b>MINE</b> to dig — uses the last direction you pressed</p>
+      <p>▲ Move <b>up</b> freely · Gravity pulls you down when unsupported</p>
+      <p>🎁 Break <b>Chests</b> for upgrades &amp; power-ups</p>
+      <p>🧨 <b>Dynamite</b> blasts blocks in a plus (+) pattern</p>
+      <p>💎 Go <b>deeper</b> for rarer, more valuable ores!</p>
+      <p style="margin-top:8px;color:#666">Keyboard: WASD / Arrows · Z=Mine · X=Use</p>
+      <button class="mb" onclick="gotoScr('sm')" style="margin-top:12px">← Back</button>
+    </div>
+    <div class="sc" id="sw">
+      <h1>🏆</h1>
+      <h1 style="font-size:22px">LEVEL CLEAR!</h1>
+      <h2 id="wsub"></h2>
+      <p id="wst"></p>
+      <button class="mb" id="bnx" style="margin-top:10px">▶ Next Level</button>
+      <button class="mb" onclick="gotoScr('sl')">Level Select</button>
+      <button class="mb" onclick="gotoScr('sm')">Menu</button>
+    </div>
+    <div class="sc" id="sg">
+      <h1>💀</h1>
+      <h1 style="font-size:22px">GAME OVER</h1>
+      <h2 id="gsub"></h2>
+      <p id="gst"></p>
+      <button class="mb" id="brt" style="margin-top:10px">↺ Retry</button>
+      <button class="mb" onclick="gotoScr('sl')">Level Select</button>
+      <button class="mb" onclick="gotoScr('sm')">Menu</button>
+    </div>
+    <div class="sc" id="spause">
+      <h1 style="font-size:26px">⏸ PAUSED</h1>
+      <button class="mb" onclick="togglePause()" style="margin-top:14px">▶ Resume</button>
+      <button class="mb" id="bprt" style="margin-top:4px">↺ Retry</button>
+      <button class="mb" onclick="gotoScr('sm');G=null;" style="margin-top:4px">🏠 Main Menu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════
+const BS=32, WW=50, WH=78;
+const GRAV=0.44, MSP=2.8;
+
+// ══════════════════════════════════════════
+//  BLOCKS
+// ══════════════════════════════════════════
+const B={
+  AIR:    {id:0,hp:0,        val:0,  col:null,     name:'Air'},
+  DIRT:   {id:1,hp:2,        val:0,  col:'#7a4e2a', name:'Dirt'},
+  STONE:  {id:2,hp:5,        val:0,  col:'#686868', name:'Stone'},
+  COAL:   {id:3,hp:3,        val:10, col:'#2e2e2e', name:'Coal Ore', pcol:'#888'},
+  IRON:   {id:4,hp:5,        val:25, col:'#9e6030', name:'Iron Ore', pcol:'#cc8844'},
+  GOLD:   {id:5,hp:8,        val:50, col:'#c09010', name:'Gold Ore', pcol:'#ffd700'},
+  RUBY:   {id:6,hp:9,        val:75, col:'#aa1100', name:'Ruby Ore',  pcol:'#ff5533'},
+  DIAM:   {id:7,hp:12,       val:100,col:'#00aacc', name:'Diamond',   pcol:'#44ffff'},
+  CHEST:  {id:8,hp:2,        val:0,  col:'#7a3e10', name:'Chest'},
+  BEDROCK:{id:9,hp:Infinity, val:0,  col:'#161616', name:'Bedrock'},
+};
+const BID=Object.values(B).reduce((a,v)=>(a[v.id]=v,a),{});
+
+// ══════════════════════════════════════════
+//  PICKAXES
+// ══════════════════════════════════════════
+const PK=[
+  {name:'Wooden',  dmg:1, ms:680, col:'#8B5E3C', em:'⛏'},
+  {name:'Copper',  dmg:2, ms:530, col:'#b87333', em:'⛏'},
+  {name:'Iron',    dmg:4, ms:380, col:'#cc8844', em:'⛏'},
+  {name:'Steel',   dmg:8, ms:240, col:'#99aacc', em:'⛏'},
+  {name:'Diamond', dmg:16,ms:140, col:'#44ffff', em:'💎'},
+];
+
+// ══════════════════════════════════════════
+//  LEVELS
+// ══════════════════════════════════════════
+const LV=[
+  {id:0,name:'Level 1',lock:false,dens:1.0, desc:'Mine all the ore to win. Learn the ropes!'},
+  {id:1,name:'Level 2',lock:false,dens:0.85,desc:'Deeper veins, sparser ore. Clear it all!'},
+  {id:2,name:'Level 3',lock:true, dens:0.70,desc:'Pickaxe upgrades locked. Still gotta clear it all.'},
+  {id:3,name:'Level 4',lock:true, dens:0.58,desc:'Upgrades locked and ore is scarce. Good luck.'},
+  {id:4,name:'Level 5',lock:false,dens:0.42,desc:'Master Miner challenge. Ore is rare — find it all.'},
+];
+
+// ══════════════════════════════════════════
+//  GLOBALS
+// ══════════════════════════════════════════
+const cvs=document.getElementById('c');
+const ctx=cvs.getContext('2d');
+let G=null, raf=null, lt=0;
+const K={L:false,R:false,U:false,D:false,mine:false,use:false};
+let shk={x:0,y:0,t:0};
+
+// ══════════════════════════════════════════
+//  WORLD GEN
+// ══════════════════════════════════════════
+function genWorld(lv){
+  const w=[],hp=[],sx=Math.floor(WW/2);
+  for(let y=0;y<WH;y++){
+    w[y]=[];hp[y]=[];
+    for(let x=0;x<WW;x++){
+      let id;
+      if(y===WH-1||x===0||x===WW-1){id=B.BEDROCK.id;}
+      else if(y<=2&&Math.abs(x-sx)<=1){id=B.AIR.id;}
+      else if(y<=1){id=B.AIR.id;}
+      else if(y<=5){id=Math.random()<0.8?B.DIRT.id:B.STONE.id;}
+      else if(y<=18){
+        const r=Math.random(),d=lv.dens;
+        if(r<0.42)id=B.DIRT.id;
+        else if(r<0.70)id=B.STONE.id;
+        else if(r<0.70+0.15*d)id=B.COAL.id;
+        else if(r<0.70+0.22*d)id=B.IRON.id;
+        else id=B.STONE.id;
+      }else if(y<=38){
+        const r=Math.random(),d=lv.dens;
+        if(r<0.46)id=B.STONE.id;
+        else if(r<0.46+0.12*d)id=B.COAL.id;
+        else if(r<0.46+0.22*d)id=B.IRON.id;
+        else if(r<0.46+0.32*d)id=B.GOLD.id;
+        else if(r<0.46+0.37*d)id=B.RUBY.id;
+        else id=B.STONE.id;
+      }else if(y<=58){
+        const r=Math.random(),d=lv.dens;
+        if(r<0.42)id=B.STONE.id;
+        else if(r<0.42+0.10*d)id=B.IRON.id;
+        else if(r<0.42+0.20*d)id=B.GOLD.id;
+        else if(r<0.42+0.30*d)id=B.RUBY.id;
+        else if(r<0.42+0.42*d)id=B.DIAM.id;
+        else id=B.STONE.id;
+      }else{
+        const r=Math.random(),d=lv.dens;
+        if(r<0.36)id=B.STONE.id;
+        else if(r<0.36+0.14*d)id=B.GOLD.id;
+        else if(r<0.36+0.27*d)id=B.RUBY.id;
+        else if(r<0.36+0.46*d)id=B.DIAM.id;
+        else id=B.STONE.id;
+      }
+      w[y][x]=id; hp[y][x]=BID[id].hp;
+    }
+  }
+  // Chests
+  for(let i=0;i<20;i++){
+    const cx=2+Math.floor(Math.random()*(WW-4));
+    const cy=7+Math.floor(Math.random()*(WH-12));
+    if(w[cy][cx]!==B.BEDROCK.id&&w[cy][cx]!==B.AIR.id){
+      w[cy][cx]=B.CHEST.id; hp[cy][cx]=B.CHEST.hp;
+    }
+  }
+  // Solid ground at spawn
+  w[3][sx]=B.DIRT.id; hp[3][sx]=B.DIRT.hp;
+  // Count ore
+  let oreCount=0;
+  for(let y=0;y<WH;y++)for(let x=0;x<WW;x++){if(BID[w[y][x]]&&BID[w[y][x]].val>0)oreCount++;}
+  return{w,hp,sx,oreCount};
+}
+
+// ══════════════════════════════════════════
+//  GAME INIT
+// ══════════════════════════════════════════
+function startGame(idx){
+  const lv=LV[idx];
+  const{w,hp,sx,oreCount}=genWorld(lv);
+  G={
+    lv,idx,w,hp,
+    p:{x:sx*BS+BS/2-10,y:BS*1.2,w:20,h:28,vx:0,vy:0,gnd:false,dir:1,mining:false},
+    cam:{x:0,y:0},
+    pts:0,pk:0,
+    inv:[],sel:0,
+    oreLeft:oreCount,oreTotal:oreCount,
+    won:false,lost:false,paused:false,
+    mt:null,mp:0,
+    mineDir:{dx:1,dy:0},
+    parts:[],ft:[],
+    _up:false,_pp:false,
+    tip:lv.id===0?3:0,
+  };
+  // Starting dynamite: 5 on level 1, decreasing by 1 each level (min 1)
+  const startDyn=Math.max(1,5-idx);
+  G.inv.push({t:'dyn',n:startDyn});
+  updHUD(); rebInv(); hideOv();
+}
+
+// ══════════════════════════════════════════
+//  COLLISION
+// ══════════════════════════════════════════
+function getB(x,y){
+  if(x<0||x>=WW||y<0||y>=WH)return B.BEDROCK.id;
+  return G.w[y][x];
+}
+function solid(x,y){return getB(x,y)!==B.AIR.id;}
+
+function resX(p){
+  const yt=Math.floor(p.y/BS), yb=Math.floor((p.y+p.h-1)/BS);
+  if(p.vx<0){
+    const bx=Math.floor(p.x/BS);
+    if(solid(bx,yt)||solid(bx,yb)){p.x=(bx+1)*BS;p.vx=0;}
+  }else if(p.vx>0){
+    const bx=Math.floor((p.x+p.w-1)/BS);
+    if(solid(bx,yt)||solid(bx,yb)){p.x=bx*BS-p.w;p.vx=0;}
+  }
+}
+function resY(p){
+  const xl=Math.floor(p.x/BS), xr=Math.floor((p.x+p.w-1)/BS);
+  if(p.vy<0){
+    const by=Math.floor(p.y/BS);
+    if(solid(xl,by)||solid(xr,by)){p.y=(by+1)*BS;p.vy=0;}
+  }else{
+    const by=Math.floor((p.y+p.h)/BS);
+    if(solid(xl,by)||solid(xr,by)){p.y=by*BS-p.h;p.vy=0;p.gnd=true;}
+  }
+}
+
+// ══════════════════════════════════════════
+//  UPDATE
+// ══════════════════════════════════════════
+function update(dt){
+  const p=G.p;
+
+  // Horizontal movement
+  p.vx=0;
+  if(K.L){p.vx=-MSP;p.dir=-1;}
+  if(K.R){p.vx= MSP;p.dir= 1;}
+
+  // Vertical: up arrow moves freely upward; gravity only applies when not pressing up
+  if(K.U&&!K.mine){
+    p.vy=-MSP;
+  }else{
+    // Gravity — pulls down when airborne, gives visual fall when block below is mined
+    p.vy=Math.min(p.vy+GRAV,12);
+  }
+
+  // Track last pressed direction for mining
+  if(K.D){G.mineDir={dx:0,dy:1};}
+  else if(K.U){G.mineDir={dx:0,dy:-1};}
+  else if(K.L){G.mineDir={dx:-1,dy:0};}
+  else if(K.R){G.mineDir={dx:1,dy:0};}
+
+  // Integrate
+  p.x+=p.vx; resX(p);
+  p.y+=p.vy; p.gnd=false; resY(p);
+
+  // Clamp world
+  p.x=Math.max(BS,Math.min(WW*BS-BS-p.w,p.x));
+  p.y=Math.max(0,p.y);
+
+  // Mining — use current dir key if held, else last mineDir
+  if(K.mine){
+    let dx=0,dy=0;
+    if(K.D)dy=1;
+    else if(K.U)dy=-1;
+    else if(K.L)dx=-1;
+    else if(K.R)dx=1;
+    else{dx=G.mineDir.dx;dy=G.mineDir.dy;}
+    doMine(dx,dy,dt);
+  }else{G.mt=null;G.mp=0;p.mining=false;}
+
+  // Use
+  if(K.use&&!G._up){G._up=true;useItem();}
+  if(!K.use)G._up=false;
+
+  // Camera
+  const vw=cvs.width,vh=cvs.height;
+  const tcx=p.x+p.w/2-vw/2, tcy=p.y+p.h/2-vh/2;
+  G.cam.x+=(tcx-G.cam.x)*0.14;
+  G.cam.y+=(tcy-G.cam.y)*0.14;
+  G.cam.x=Math.max(0,Math.min(WW*BS-vw,G.cam.x));
+  G.cam.y=Math.max(0,Math.min(WH*BS-vh,G.cam.y));
+
+  // Particles
+  for(let i=G.parts.length-1;i>=0;i--){
+    const t=G.parts[i];
+    t.x+=t.vx;t.y+=t.vy;t.vy+=0.11;t.l-=dt;
+    if(t.l<=0)G.parts.splice(i,1);
+  }
+  // Floating texts
+  for(let i=G.ft.length-1;i>=0;i--){
+    const t=G.ft[i];t.y-=0.55;t.l-=dt;
+    if(t.l<=0)G.ft.splice(i,1);
+  }
+  // Shake decay
+  if(shk.t>0){shk.t-=dt;shk.x=(Math.random()-.5)*7;shk.y=(Math.random()-.5)*7;}
+  else{shk.x=0;shk.y=0;}
+
+  // Tip timer
+  if(G.tip>0)G.tip-=dt;
+
+  updHUD();
+  if(G.oreLeft<=0&&!G.won)win();
+}
+
+// ══════════════════════════════════════════
+//  MINING
+// ══════════════════════════════════════════
+function doMine(dx,dy,dt){
+  const p=G.p;
+  let bx,by;
+  if(dy===1){bx=Math.floor((p.x+p.w/2)/BS);by=Math.floor((p.y+p.h+3)/BS);}
+  else if(dy===-1){bx=Math.floor((p.x+p.w/2)/BS);by=Math.floor((p.y-3)/BS);}
+  else{
+    const ex=dx>0?p.x+p.w+4:p.x-4;
+    bx=Math.floor(ex/BS);by=Math.floor((p.y+p.h/2)/BS);
+  }
+  if(bx<0||bx>=WW||by<0||by>=WH)return;
+  const id=G.w[by][bx];
+  if(id===B.AIR.id||id===B.BEDROCK.id){G.mt=null;G.mp=0;p.mining=false;return;}
+
+  if(!G.mt||G.mt.x!==bx||G.mt.y!==by){G.mt={x:bx,y:by};G.mp=0;}
+  p.mining=true;
+  const pk=PK[G.pk];
+  G.mp+=dt*1000;
+  if(G.mp>=pk.ms){
+    G.mp=0;
+    G.hp[by][bx]-=pk.dmg;
+    const blk=BID[id];
+    spParts(bx*BS+BS/2,by*BS+BS/2,blk.pcol||blk.col||'#888',5);
+    if(G.hp[by][bx]<=0)breakB(bx,by,id);
+  }
+}
+
+function breakB(bx,by,id){
+  G.w[by][bx]=B.AIR.id; G.hp[by][bx]=0;
+  G.mt=null; G.mp=0; G.p.mining=false;
+  const blk=BID[id];
+  if(id===B.CHEST.id){openChest(bx,by);return;}
+  if(blk.val>0){
+    G.pts+=blk.val;
+    G.oreLeft=Math.max(0,G.oreLeft-1);
+    addFT(bx*BS+BS/2,by*BS,'+'+blk.val,blk.pcol||blk.col||'#fff');
+    spParts(bx*BS+BS/2,by*BS+BS/2,blk.pcol||blk.col||'#fff',14);
+  }
+}
+
+// ══════════════════════════════════════════
+//  CHEST
+// ══════════════════════════════════════════
+function openChest(bx,by){
+  spParts(bx*BS+BS/2,by*BS+BS/2,'#ffd700',20);
+  const pool=[];
+  pool.push({t:'dyn',n:2,w:35});
+  pool.push({t:'dyn',n:4,w:12});
+  pool.push({t:'pts',n:60, w:22});
+  pool.push({t:'pts',n:120,w:10});
+  if(!G.lv.lock&&G.pk<PK.length-1)pool.push({t:'up',w:45});
+  else pool.push({t:'pts',n:180,w:45});
+
+  const tot=pool.reduce((s,l)=>s+l.w,0);
+  let r=Math.random()*tot,prize=pool[0];
+  for(const l of pool){r-=l.w;if(r<=0){prize=l;break;}}
+
+  if(prize.t==='dyn'){
+    addInv('dyn',prize.n);
+    addFT(bx*BS+BS/2,by*BS-10,'🧨×'+prize.n,'#ff8800');
+  }else if(prize.t==='up'){
+    G.pk=Math.min(G.pk+1,PK.length-1);
+    addFT(bx*BS+BS/2,by*BS-10,'⬆ '+PK[G.pk].name+'!','#44ffff');
+    rebInv();updHUD();
+  }else{
+    G.pts+=prize.n;
+    addFT(bx*BS+BS/2,by*BS-10,'+'+prize.n+' pts!','#ffd700');
+  }
+}
+
+// ══════════════════════════════════════════
+//  INVENTORY
+// ══════════════════════════════════════════
+function addInv(type,n){
+  const ex=G.inv.find(i=>i.t===type);
+  if(ex)ex.n+=n; else G.inv.push({t:type,n});
+  rebInv();
+}
+function rebInv(){
+  if(!G)return;
+  const bar=document.getElementById('ibar');bar.innerHTML='';
+  const ico={dyn:'🧨'};
+  G.inv.forEach((it,i)=>{
+    const s=document.createElement('div');
+    s.className='is'+(i===G.sel?' sel':'');
+    s.innerHTML=`${ico[it.t]||'?'}<span class="ic">${it.n}</span>`;
+    s.onclick=()=>{G.sel=i;rebInv();};
+    bar.appendChild(s);
+  });
+}
+function useItem(){
+  if(!G.inv.length)return;
+  const item=G.inv[G.sel%Math.max(1,G.inv.length)];
+  if(!item)return;
+  if(item.t==='dyn'){
+    useDyn();item.n--;
+    if(item.n<=0){G.inv.splice(G.inv.indexOf(item),1);G.sel=0;}
+    rebInv();
+  }
+}
+function useDyn(){
+  const p=G.p;
+  const cx=Math.round((p.x+p.w/2)/BS)+p.dir;
+  const cy=Math.round((p.y+p.h/2)/BS);
+  const cells=[];
+  for(let d=-2;d<=2;d++){cells.push([cx+d,cy]);cells.push([cx,cy+d]);}
+  let any=false;
+  for(const[bx,by]of cells){
+    if(bx<0||bx>=WW||by<0||by>=WH)continue;
+    const id=G.w[by][bx];
+    if(id===B.AIR.id||id===B.BEDROCK.id)continue;
+    any=true;
+    const blk=BID[id];
+    G.pts+=blk.val||0;
+    if(blk.val>0){G.oreLeft=Math.max(0,G.oreLeft-1);addFT(bx*BS+BS/2,by*BS,'+'+blk.val,blk.pcol||'#fff');}
+    if(id===B.CHEST.id){G.w[by][bx]=B.AIR.id;G.hp[by][bx]=0;openChest(bx,by);}
+    else{G.w[by][bx]=B.AIR.id;G.hp[by][bx]=0;}
+    spParts(bx*BS+BS/2,by*BS+BS/2,blk.pcol||blk.col||'#888',8);
+  }
+  if(any){
+    shk.t=0.4;
+    spParts(cx*BS,cy*BS,'#ff5500',35);
+    spParts(cx*BS,cy*BS,'#ffdd00',22);
+    spParts(cx*BS,cy*BS,'#ffffff',14);
+  }
+}
+
+// ══════════════════════════════════════════
+//  PARTICLES + FLOATING TEXT
+// ══════════════════════════════════════════
+function spParts(x,y,col,n){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2,s=1+Math.random()*3.5;
+    G.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-1.8,
+      col,sz:1.5+Math.random()*2.5,l:0.35+Math.random()*0.55,ml:0.9});
+  }
+}
+function addFT(x,y,txt,col){G.ft.push({x,y,txt,col,l:1.7,ml:1.7});}
+
+// ══════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════
+function render(){
+  const vw=cvs.width,vh=cvs.height;
+  ctx.clearRect(0,0,vw,vh);
+
+  // BG gradient based on depth
+  const dy=G?G.cam.y/(WH*BS):0;
+  const r1=Math.floor(14+dy*30), g1=Math.floor(8+dy*5), b1=Math.floor(22-dy*10);
+  const r2=Math.floor(22+dy*20), g2=Math.floor(8);
+  const bg=ctx.createLinearGradient(0,0,0,vh);
+  bg.addColorStop(0,`rgb(${r1},${g1},${b1})`);
+  bg.addColorStop(1,`rgb(${r2},${g2},3)`);
+  ctx.fillStyle=bg; ctx.fillRect(0,0,vw,vh);
+
+  ctx.save();
+  ctx.translate(Math.round(-G.cam.x+shk.x),Math.round(-G.cam.y+shk.y));
+
+  const x0=Math.max(0,Math.floor(G.cam.x/BS)-1);
+  const x1=Math.min(WW-1,Math.ceil((G.cam.x+vw)/BS)+1);
+  const y0=Math.max(0,Math.floor(G.cam.y/BS)-1);
+  const y1=Math.min(WH-1,Math.ceil((G.cam.y+vh)/BS)+1);
+
+  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
+    const id=G.w[y][x];
+    if(id!==B.AIR.id)drawBlock(x,y,id);
+  }
+
+  drawPlayer();
+
+  // Particles
+  for(const pt of G.parts){
+    ctx.globalAlpha=Math.max(0,pt.l/pt.ml);
+    ctx.fillStyle=pt.col;
+    ctx.beginPath();ctx.arc(pt.x,pt.y,pt.sz,0,Math.PI*2);ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // Floating texts
+  ctx.textAlign='center';
+  for(const t of G.ft){
+    const a=Math.min(1,t.l*1.3);
+    ctx.globalAlpha=a;
+    ctx.font='bold 13px monospace';
+    ctx.fillStyle='#000';ctx.fillText(t.txt,t.x+1,t.y+1);
+    ctx.fillStyle=t.col;ctx.fillText(t.txt,t.x,t.y);
+  }
+  ctx.globalAlpha=1;ctx.textAlign='left';
+
+  // Dynamite target indicator
+  if(G.inv.length>0&&G.inv[G.sel%G.inv.length]?.t==='dyn'){
+    const p=G.p;
+    const cx=Math.round((p.x+p.w/2)/BS)+p.dir;
+    const cy=Math.round((p.y+p.h/2)/BS);
+    ctx.strokeStyle='rgba(255,100,0,0.4)';ctx.lineWidth=2;
+    ctx.setLineDash([3,3]);
+    for(let d=-2;d<=2;d++){
+      ctx.strokeRect(cx*BS+(d!==0?0:2)*BS,cy*BS,0,0);
+      ctx.strokeRect((cx+d)*BS,cy*BS,BS,BS);
+      ctx.strokeRect(cx*BS,(cy+d)*BS,BS,BS);
+    }
+    ctx.setLineDash([]);
+  }
+
+  ctx.restore();
+
+  // Screen-space HUD
+  drawHUDOverlay(vw,vh);
+}
+
+function drawBlock(x,y,id){
+  const blk=BID[id];
+  const px=x*BS,py=y*BS;
+
+  ctx.fillStyle=blk.col||'#555';
+  ctx.fillRect(px,py,BS,BS);
+
+  // Depth darkening
+  const d=y/WH;
+  ctx.fillStyle=`rgba(0,0,0,${d*0.52})`;
+  ctx.fillRect(px,py,BS,BS);
+
+  // Block-specific art
+  if(id===B.BEDROCK.id){
+    ctx.fillStyle='rgba(255,255,255,0.04)';
+    ctx.fillRect(px+3,py+3,BS/2-4,BS/2-4);
+    ctx.fillRect(px+BS/2+1,py+BS/2+1,BS/2-4,BS/2-4);
+    ctx.fillStyle='rgba(0,0,0,0.3)';
+    ctx.fillRect(px+BS/2+1,py+3,BS/2-4,BS/2-4);
+    ctx.fillRect(px+3,py+BS/2+1,BS/2-4,BS/2-4);
+  } else if(id===B.CHEST.id){
+    // Lid
+    ctx.fillStyle='#9a5c1e';ctx.fillRect(px+3,py+3,BS-6,BS/2-2);
+    // Body
+    ctx.fillStyle='#7a400e';ctx.fillRect(px+3,py+BS/2-1,BS-6,BS/2-2);
+    // Band
+    ctx.fillStyle='#3a1a00';ctx.fillRect(px+3,py+BS/2-3,BS-6,4);
+    // Lock
+    ctx.fillStyle='#ffd700';ctx.fillRect(px+BS/2-3,py+BS/2-5,6,7);
+    ctx.fillStyle='#cc8800';ctx.fillRect(px+BS/2-2,py+BS/2-8,4,4);
+  } else if(blk.val>0){
+    // Ore veins
+    ctx.fillStyle='rgba(255,255,255,0.20)';
+    ctx.beginPath();ctx.ellipse(px+BS*0.3,py+BS*0.32,BS*0.11,BS*0.07,-0.4,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(px+BS*0.67,py+BS*0.62,BS*0.09,BS*0.06,0.3,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(px+BS*0.44,py+BS*0.73,BS*0.07,BS*0.05,-0.2,0,Math.PI*2);ctx.fill();
+    // Glow ring
+    ctx.strokeStyle=blk.pcol||blk.col;ctx.lineWidth=1.4;ctx.globalAlpha=0.5;
+    ctx.strokeRect(px+3,py+3,BS-6,BS-6);ctx.globalAlpha=1;
+  } else if(id===B.DIRT.id){
+    ctx.fillStyle='rgba(0,0,0,0.18)';
+    ctx.fillRect(px+4,py+4,3,3);ctx.fillRect(px+BS-8,py+BS/2,3,3);
+    ctx.fillStyle='rgba(255,255,255,0.06)';ctx.fillRect(px+BS/2,py+7,5,2);
+  } else if(id===B.STONE.id){
+    ctx.fillStyle='rgba(255,255,255,0.06)';ctx.fillRect(px+4,py+4,BS-8,3);
+    ctx.fillStyle='rgba(0,0,0,0.12)';ctx.fillRect(px+4,py+BS/2,BS-8,2);
+  }
+
+  // Damage cracks
+  if(blk.hp>0&&blk.hp!==Infinity){
+    const cur=G.hp[y][x],rat=1-cur/blk.hp;
+    if(rat>0){
+      ctx.fillStyle=`rgba(0,0,0,${rat*0.5})`;ctx.fillRect(px,py,BS,BS);
+      ctx.strokeStyle=`rgba(0,0,0,${rat*0.7})`;ctx.lineWidth=1;
+      ctx.beginPath();
+      if(rat>0.15){ctx.moveTo(px+BS*0.38,py+BS*0.2);ctx.lineTo(px+BS*0.22,py+BS*0.58);}
+      if(rat>0.45){ctx.moveTo(px+BS*0.6,py+BS*0.28);ctx.lineTo(px+BS*0.8,py+BS*0.68);}
+      if(rat>0.72){ctx.moveTo(px+BS*0.28,py+BS*0.72);ctx.lineTo(px+BS*0.74,py+BS*0.88);}
+      ctx.stroke();
+    }
+  }
+
+  // Mining progress on block
+  if(G.mt&&G.mt.x===x&&G.mt.y===y){
+    const pr=G.mp/PK[G.pk].ms;
+    ctx.fillStyle='rgba(0,0,0,0.45)';ctx.fillRect(px+1,py+BS-6,BS-2,5);
+    ctx.fillStyle=PK[G.pk].col;ctx.fillRect(px+1,py+BS-6,(BS-2)*pr,5);
+  }
+
+  // Grid
+  ctx.strokeStyle='rgba(0,0,0,0.22)';ctx.lineWidth=0.5;
+  ctx.strokeRect(px,py,BS,BS);
+}
+
+function drawPlayer(){
+  const p=G.p, x=p.x, y=p.y, dir=p.dir;
+  const T=Date.now();
+  const wk=p.gnd&&(K.L||K.R)?Math.sin(T/120)*3:0;
+
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,0.22)';
+  ctx.beginPath();ctx.ellipse(x+p.w/2,y+p.h+2,p.w*0.42,3,0,0,Math.PI*2);ctx.fill();
+
+  // Boots
+  ctx.fillStyle='#221000';
+  ctx.fillRect(x+1,y+p.h-4+Math.round(wk),8,4);
+  ctx.fillRect(x+p.w-9,y+p.h-4-Math.round(wk),8,4);
+
+  // Legs
+  ctx.fillStyle='#1a2a6e';
+  ctx.fillRect(x+2,y+p.h-13,7,10+Math.round(wk));
+  ctx.fillRect(x+p.w-9,y+p.h-13,7,10-Math.round(wk));
+
+  // Body
+  ctx.fillStyle='#2255bb';ctx.fillRect(x+1,y+8,p.w-2,13);
+  // Belt
+  ctx.fillStyle='#2a1400';ctx.fillRect(x+1,y+18,p.w-2,3);
+  ctx.fillStyle='#c09010';ctx.fillRect(x+p.w/2-3,y+18,6,3);
+
+  // Head
+  ctx.fillStyle='#e8c090';ctx.fillRect(x+4,y+3,12,9);
+
+  // Helmet
+  ctx.fillStyle='#4a3000';ctx.fillRect(x+3,y,14,7);
+  ctx.fillRect(x+2,y+5,16,3);
+  ctx.fillStyle='#c09010';ctx.fillRect(x+3,y+7,14,2);
+
+  // Lamp
+  const lx=dir>0?x+p.w-4:x+1;
+  ctx.fillStyle='#ffff88';ctx.fillRect(lx,y+2,4,4);
+  ctx.fillStyle='rgba(255,255,180,0.14)';
+  ctx.beginPath();
+  if(dir>0){ctx.moveTo(lx+4,y+4);ctx.lineTo(lx+22,y-2);ctx.lineTo(lx+22,y+10);}
+  else{ctx.moveTo(lx,y+4);ctx.lineTo(lx-18,y-2);ctx.lineTo(lx-18,y+10);}
+  ctx.closePath();ctx.fill();
+
+  // Eye
+  ctx.fillStyle='#111';ctx.fillRect(dir>0?x+13:x+5,y+5,2,2);
+
+  // Pickaxe arm
+  const sw=p.mining?Math.sin(T/75)*0.42:0;
+  const apx=dir>0?x+p.w:x-8;
+  ctx.save();ctx.translate(apx,y+10);ctx.rotate(sw*dir);
+  // Handle
+  ctx.fillStyle='#7a4e22';ctx.fillRect(-2,0,4,12);
+  // Head
+  ctx.fillStyle=PK[G.pk].col;
+  const hx=dir>0?0:-10;
+  ctx.fillRect(hx,-3,12,5);
+  ctx.fillRect(dir>0?10:-2,-7,4,9);
+  ctx.restore();
+}
+
+function drawHUDOverlay(vw,vh){
+  // Mining bar (top-left)
+  if(G.p.mining&&G.mt){
+    const pr=G.mp/PK[G.pk].ms;
+    ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(8,8,84,11);
+    ctx.fillStyle=PK[G.pk].col;ctx.fillRect(9,9,82*pr,9);
+    ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=1;ctx.strokeRect(8,8,84,11);
+  }
+
+  // Depth meter (top-right)
+  const depth=Math.max(0,Math.floor(G.p.y/BS)-3);
+  ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(vw-72,6,66,16);
+  ctx.font='11px monospace';ctx.textAlign='right';
+  ctx.fillStyle=depth>50?'#ff8844':depth>25?'#ffdd44':'#8888ff';
+  ctx.fillText(`↓ ${depth}m`,vw-8,18);ctx.textAlign='left';
+
+  // Ore name when mining
+  if(G.mt){
+    const id=G.w[G.mt.y][G.mt.x];
+    if(id&&id!==B.AIR.id){
+      const blk=BID[id];
+      ctx.fillStyle='rgba(0,0,0,0.55)';ctx.fillRect(vw/2-50,vh-22,100,16);
+      ctx.font='11px monospace';ctx.textAlign='center';
+      ctx.fillStyle=blk.pcol||blk.col||'#ccc';
+      ctx.fillText(blk.name,vw/2,vh-10);ctx.textAlign='left';
+    }
+  }
+
+  // First-level tip
+  if(G.tip>0){
+    const a=Math.min(1,G.tip);
+    ctx.globalAlpha=a*0.88;
+    ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(vw/2-100,vh/2-22,200,44);
+    ctx.strokeStyle='#ffd700';ctx.lineWidth=1;ctx.strokeRect(vw/2-100,vh/2-22,200,44);
+    ctx.font='11px monospace';ctx.textAlign='center';
+    ctx.fillStyle='#ffd700';
+    ctx.fillText('Hold MINE to dig in last direction',vw/2,vh/2-6);
+    ctx.fillStyle='#aaaaaa';
+    ctx.fillText('▲ moves up freely · gravity pulls you down',vw/2,vh/2+10);
+    ctx.textAlign='left';ctx.globalAlpha=1;
+  }
+}
+
+// ══════════════════════════════════════════
+//  HUD
+// ══════════════════════════════════════════
+function updHUD(){
+  if(!G)return;
+  document.getElementById('hl').textContent=G.lv.name;
+  const pct=G.oreTotal>0?Math.round(100*(G.oreTotal-G.oreLeft)/G.oreTotal):100;
+  document.getElementById('hp').textContent=`⛏ ${G.oreLeft} ore left (${pct}%)`;
+  const pk=PK[G.pk];
+  const pe=document.getElementById('hpk');
+  pe.textContent=`${pk.em} ${pk.name}`;pe.style.color=pk.col;
+}
+
+// ══════════════════════════════════════════
+//  WIN / LOSE
+// ══════════════════════════════════════════
+function win(){
+  G.won=true;
+  document.getElementById('wsub').textContent=G.lv.name+' Complete!';
+  document.getElementById('wst').textContent=`All ore cleared! Score: ${G.pts} pts`;
+  const nb=document.getElementById('bnx');
+  const ni=G.idx+1;
+  if(ni<LV.length){nb.style.display='';nb.onclick=()=>startGame(ni);}
+  else nb.style.display='none';
+  showOv('sw');
+}
+function lose(r){
+  G.lost=true;
+  document.getElementById('gsub').textContent=r;
+  document.getElementById('gst').textContent=`Score: ${G.pts} / ${G.lv.target}`;
+  document.getElementById('brt').onclick=()=>startGame(G.idx);
+  showOv('sg');
+}
+
+// ══════════════════════════════════════════
+//  MAIN LOOP
+// ══════════════════════════════════════════
+function loop(ts){
+  const dt=Math.min((ts-lt)/1000,0.05);lt=ts;
+  if(G&&!G.won&&!G.lost&&!G.paused)update(dt);
+  if(G)render();
+  else drawBg();
+  requestAnimationFrame(loop);
+}
+function drawBg(){
+  const vw=cvs.width,vh=cvs.height;
+  ctx.fillStyle='#080400';ctx.fillRect(0,0,vw,vh);
+  ctx.fillStyle='rgba(255,200,50,0.04)';
+  for(let i=0;i<18;i++)ctx.fillRect((i*71+30)%vw,(i*97+60)%vh,4+i%5,4+i%4);
+}
+
+// ══════════════════════════════════════════
+//  INPUT
+// ══════════════════════════════════════════
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){togglePause();e.preventDefault();return;}
+  if(['ArrowLeft','a'].includes(e.key))K.L=true;
+  if(['ArrowRight','d'].includes(e.key))K.R=true;
+  if(['ArrowUp','w'].includes(e.key))K.U=true;
+  if(['ArrowDown','s'].includes(e.key))K.D=true;
+  if([' ','z'].includes(e.key))K.mine=true;
+  if(['x','Enter'].includes(e.key))K.use=true;
+  e.preventDefault();
+},{passive:false});
+document.addEventListener('keyup',e=>{
+  if(['ArrowLeft','a'].includes(e.key))K.L=false;
+  if(['ArrowRight','d'].includes(e.key))K.R=false;
+  if(['ArrowUp','w'].includes(e.key))K.U=false;
+  if(['ArrowDown','s'].includes(e.key))K.D=false;
+  if([' ','z'].includes(e.key))K.mine=false;
+  if(['x','Enter'].includes(e.key))K.use=false;
+});
+
+function bindB(id,key){
+  const el=document.getElementById(id);if(!el)return;
+  const on=e=>{e.preventDefault();K[key]=true;el.classList.add('on');};
+  const off=e=>{e.preventDefault();K[key]=false;el.classList.remove('on');};
+  el.addEventListener('touchstart',on,{passive:false});
+  el.addEventListener('touchend',off,{passive:false});
+  el.addEventListener('touchcancel',off,{passive:false});
+  el.addEventListener('mousedown',on);
+  el.addEventListener('mouseup',off);
+  el.addEventListener('mouseleave',off);
+}
+bindB('bu','U');bindB('bd','D');bindB('bl2','L');bindB('br','R');
+bindB('am','mine');bindB('au','use');
+
+// ══════════════════════════════════════════
+//  UI HELPERS
+// ══════════════════════════════════════════
+function gotoScr(id){
+  document.querySelectorAll('.sc').forEach(s=>s.classList.remove('a'));
+  const s=document.getElementById(id);if(s)s.classList.add('a');
+  document.getElementById('ov').classList.remove('h');
+}
+function showOv(id){gotoScr(id);}
+function hideOv(){document.getElementById('ov').classList.add('h');}
+
+function togglePause(){
+  if(!G||G.won||G.lost)return;
+  G.paused=!G.paused;
+  const pb=document.getElementById('hpause');
+  if(G.paused){
+    document.getElementById('bprt').onclick=()=>{togglePause();startGame(G.idx);};
+    showOv('spause');
+    if(pb)pb.textContent='▶';
+  }else{
+    hideOv();
+    if(pb)pb.textContent='⏸';
+  }
+}
+
+function buildLevelList(){
+  const ll=document.getElementById('ll');ll.innerHTML='';
+  LV.forEach((lv,i)=>{
+    const c=document.createElement('div');c.className='lc';
+    const lb=lv.lock?`<span class="bg bl">🔒 No Upgrades</span>`:'';
+    c.innerHTML=`<div class="lt">${lv.name}<span class="bg bn">⛏ Clear All Ore</span>${lb}</div><div class="ld">${lv.desc}</div>`;
+    c.onclick=()=>startGame(i);
+    ll.appendChild(c);
+  });
+}
+
+// ══════════════════════════════════════════
+//  RESIZE
+// ══════════════════════════════════════════
+function resize(){
+  const wrap=document.getElementById('wrap');
+  const hud=document.getElementById('hud');
+  const ctrl=document.getElementById('ctrl');
+  cvs.width=wrap.clientWidth;
+  cvs.height=wrap.clientHeight-hud.offsetHeight-ctrl.offsetHeight;
+}
+window.addEventListener('resize',resize);
+resize();
+
+// ══════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════
+buildLevelList();
+gotoScr('sm');
+requestAnimationFrame(function boot(ts){lt=ts;requestAnimationFrame(loop);});
+</script>
+</body>
+</html>
